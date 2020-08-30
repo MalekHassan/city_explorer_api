@@ -14,4 +14,3 @@ express.js framework
 cors.js library
 dotenv.js library
 
-# Change Log
