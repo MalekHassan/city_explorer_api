@@ -3,6 +3,7 @@ const express = require('express');
 const { request, response } = require('express');
 require('dotenv').config();
 const cors = require('cors');
+
 const superagent = require('superagent');
 
 const PORT =  3030;
@@ -87,6 +88,7 @@ function weatherFunc ( req , res) {
 // function errorHandler (error,request, response) {
 //     response.status(500).send(error);
 // };
+
 
 function Weather(item){
     

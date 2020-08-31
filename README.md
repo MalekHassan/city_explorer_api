@@ -15,3 +15,4 @@ cors.js library
 dotenv.js library
 
 # Change Log
+26-07-2020 3:30pm - Application now has a fully-functional express server, with a GET route for the location resource.
