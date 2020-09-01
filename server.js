@@ -22,11 +22,8 @@ function locationSet(request,response){
             let locationData = new Location (cityName,data.body);            
             response.send(locationData);
          })
-         .catch(()=>{
-        errorHandler()
-    })
-}
-
+        }
+     
 app.get('/weather', weatherFunc);
 function weatherFunc ( req , res) {
     let weatherArr = []

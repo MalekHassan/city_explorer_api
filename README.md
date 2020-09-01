@@ -13,6 +13,6 @@ This application was build with Node.js and it includes:
 express.js framework
 cors.js library
 dotenv.js library
-
+sssss
 # Change Log
 26-07-2020 3:30pm - Application now has a fully-functional express server, with a GET route for the location resource.
