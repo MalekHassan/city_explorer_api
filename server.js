@@ -1,7 +1,8 @@
 'use strict'
+require('dotenv').config();
 const express = require('express');
 const { request, response } = require('express');
-require('dotenv').config();
+
 const cors = require('cors');
 
 const superagent = require('superagent');
