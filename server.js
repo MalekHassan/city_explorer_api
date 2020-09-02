@@ -16,33 +16,32 @@ app.get("/location", locationSet);
 
 async function locationSet(request, response) {
   const cityName = request.query.city;
-  let dataserver = await getServerData(cityName)
+  let dataserver = await getServerData(cityName);
   console.log(dataserver);
   // console.log('');
   if (dataserver.length === 0) {
     console.log("from API");
     response.send(await getApiData(cityName));
   } else {
-    console.log('from database ')
+    console.log("from database ");
     response.send(dataserver[0]);
   }
 
   // console.log("hi", serverDa);
 }
- function getServerData(cityName) {
+function getServerData(cityName) {
   let sql = `SELECT * FROM location WHERE search_query=$1;`;
 
   let values = [cityName];
 
- return client.query(sql, values).then((result) => {
+  return client.query(sql, values).then((result) => {
     return result.rows;
   });
-  
 }
 
 function getApiData(cityName) {
   let key = process.env.LOCATION_KEY;
-  const url = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${cityName}&format=json`;
+  const url = `https://api.locationiq.com/v1/autocomplete.php?key=${key}&q=${cityName}`;
   return superagent.get(url).then((data) => {
     let locationData = new Location(cityName, data.body);
     saveDataToDB(locationData);
@@ -58,7 +57,7 @@ function saveDataToDB(data) {
     data.longitude,
   ];
   client.query(sql, values).then((datas) => {
-    console.log('insearing');
+    console.log("insearing");
   });
 }
 
@@ -111,6 +110,48 @@ function trialsFunc(req, res) {
     res.send(trailsArr);
   });
 }
+app.get("/movies", getMoviesFun);
+
+function getMoviesFun(req, res) {
+  const regions = req.query.region;
+  console.log(regions);
+  let moviesR = [];
+  let movieKey = process.env.MOVIE_API_KEY;
+  const url = `https://api.themoviedb.org/3/discover/movie?api_key=${movieKey}&region=${regions}`;
+  superagent.get(url).then((data) => {
+    console.log(data)
+    data.results.map((item, idx) => {
+      let movies = new Movies(item);
+      moviesR.push(movies);
+    });
+    res.send(moviesR);
+  });
+}
+app.get("/yelp", getYelp);
+function getYelp(request, response) {
+  let lat = request.query.latitude;
+  let lon = request.query.longitude;
+  let yelparr = [];
+  const YELP_API_KEY = process.env.YELP_API_KEY;
+  let url = "https://api.yelp.com/v3/businesses/search";
+  let queryParams = {
+    term: "restaurants",
+    latitude: lat,
+    longitude: lon,
+  };
+  superagent
+    .get(url)
+    .query(queryParams)
+    .set("Authorization", `Bearer ${YELP_API_KEY}`)
+    .then((response) => {
+      response.body.businesses
+        .map((e) => {
+          let yelpda = new Yelp(e);
+          yelparr.push(yelpda);
+        })
+    });
+    response.send(yelparr);
+}
 
 // 404 error
 app.all("*", (request, response) => {
@@ -134,6 +175,8 @@ function Location(cityName, loca) {
   this.formatted_query = loca[0].display_name;
   this.latitude = loca[0].lat;
   this.longitude = loca[0].lon;
+  this.region = loca[0].address.country_code.toUpperCase();
+
 }
 
 function Trails(data) {
@@ -149,11 +192,25 @@ function Trails(data) {
   this.condition_date = day.toLocaleDateString();
   this.condition_time = day.toLocaleTimeString("en-US");
 }
+function Movies(data) {
+  this.title = data.title;
+  this.overview = data.overview;
+  this.average_votes = data.vote_average;
+  this.total_votes = data.vote_count;
+  this.image_url = `https://image.tmdb.org/t/p/w500${data.poster_path}`;
+  this.popularity = data.popularity;
+  this.released_on = data.release_date;
+}
+function Yelp(data) {
+  this.name = data.name;
+  this.image_url = data.image_url;
+  this.price = data.price;
+  this.rating = data.rating;
+  this.url = data.url;
+}
 
-client.connect(()=>{
+client.connect(() => {
   app.listen(PORT, () => {
     console.log(`Listening on PORT ${PORT}`);
   });
-})
-
-
+});
