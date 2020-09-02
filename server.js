@@ -14,40 +14,43 @@ app.use(cors());
 
 app.get("/location", locationSet);
 
-function locationSet(request, response) {
+async function locationSet(request, response) {
   const cityName = request.query.city;
-  let dataserver = getServerData(cityName)
+  let dataserver = await getServerData(cityName)
   console.log(dataserver);
   // console.log('');
   if (dataserver.length === 0) {
-    response.send(getApiData(cityName));
+    console.log("from API");
+    response.send(await getApiData(cityName));
   } else {
+    console.log('from database ')
     response.send(dataserver[0]);
   }
 
-  console.log("hi", serverDa);
+  // console.log("hi", serverDa);
 }
-function getServerData(cityName) {
+ function getServerData(cityName) {
   let sql = `SELECT * FROM location WHERE search_query=$1;`;
 
   let values = [cityName];
 
-  client.query(sql, values).then((result) => {
-
+ return client.query(sql, values).then((result) => {
     return result.rows;
   });
+  
 }
 
 function getApiData(cityName) {
   let key = process.env.LOCATION_KEY;
   const url = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${cityName}&format=json`;
-  superagent.get(url).then((data) => {
+  return superagent.get(url).then((data) => {
     let locationData = new Location(cityName, data.body);
-    return saveDataToDB(locationData);
+    saveDataToDB(locationData);
+    return locationData;
   });
 }
 function saveDataToDB(data) {
-  let sql = `INSERT INTO location (search_query,formatted_query,latitude,longitude,region) VALUES ($1,$2,$3,$4)`;
+  let sql = `INSERT INTO location (search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4)`;
   let values = [
     data.search_query,
     data.formatted_query,
@@ -55,7 +58,7 @@ function saveDataToDB(data) {
     data.longitude,
   ];
   client.query(sql, values).then((datas) => {
-    return datas;
+    console.log('insearing');
   });
 }
 
@@ -147,6 +150,10 @@ function Trails(data) {
   this.condition_time = day.toLocaleTimeString("en-US");
 }
 
-app.listen(PORT, () => {
-  console.log(`Listening on PORT ${PORT}`);
-});
+client.connect(()=>{
+  app.listen(PORT, () => {
+    console.log(`Listening on PORT ${PORT}`);
+  });
+})
+
+
