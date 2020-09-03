@@ -12,6 +12,8 @@ const PORT = process.env.PORT || 3030;
 const app = express();
 app.use(cors());
 
+let sdRegion = [];
+
 app.get("/location", locationSet);
 
 async function locationSet(request, response) {
@@ -92,17 +94,18 @@ function weatherFunc(req, res) {
   });
 }
 
-app.get("/trials", trialsFunc);
+app.get("/trails", trialsFunc);
 function trialsFunc(req, res) {
   let trailsArr = [];
-  // const cityName = req.query.search_query;
+  const cityName = req.query.search_query;
   const lat = req.query.latitude;
   const lon = req.query.longitude;
 
   let trailKey = process.env.TRIALE_API_KEY;
-  const url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&maxDistance=10&key=${trailKey}`;
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&key=${trailKey}`;
+  console.log('url',url);
   superagent.get(url).then((datas) => {
-    console.log(datas.body.trails);
+    // console.log(datas.body.trails);
     datas.body.trails.map((item) => {
       const trailsItem = new Trails(item);
       trailsArr.push(trailsItem);
@@ -112,25 +115,39 @@ function trialsFunc(req, res) {
 }
 app.get("/movies", getMoviesFun);
 
-function getMoviesFun(req, res) {
-  const regions = req.query.region;
+async function getMoviesFun(req, res) {
+  const cityName = req.query.search_query;
+  // console.log("cityName", cityName);
+  let regions = await getRegion(cityName);
   console.log(regions);
   let moviesR = [];
   let movieKey = process.env.MOVIE_API_KEY;
-  const url = `https://api.themoviedb.org/3/discover/movie?api_key=${movieKey}&region=${regions}`;
+  const url = `https://api.themoviedb.org/3/discover/movie?api_key=${movieKey}&region=${regions.region}`;
+  console.log(url)
   superagent.get(url).then((data) => {
-    console.log(data)
-    data.results.map((item, idx) => {
+    // console.log(data.body);
+    data.body.results.map((item, idx) => {
       let movies = new Movies(item);
+      // console.log(movies);
       moviesR.push(movies);
     });
     res.send(moviesR);
   });
 }
+function getRegion(cityName) {
+  let key = process.env.LOCATION_KEY;
+  const url = `https://api.locationiq.com/v1/autocomplete.php?key=${key}&q=${cityName}`;
+  return superagent.get(url).then((data) => {
+    let locationData = new Region(data.body);
+    return locationData;
+  });
+}
 app.get("/yelp", getYelp);
-function getYelp(request, response) {
-  let lat = request.query.latitude;
-  let lon = request.query.longitude;
+async function getYelp(request, response) {
+  const cityName = request.query.search_query;
+  let regions = await getRegion(cityName);
+  let lat = regions.latitude;
+  let lon = regions.longitude;
   let yelparr = [];
   const YELP_API_KEY = process.env.YELP_API_KEY;
   let url = "https://api.yelp.com/v3/businesses/search";
@@ -143,14 +160,19 @@ function getYelp(request, response) {
     .get(url)
     .query(queryParams)
     .set("Authorization", `Bearer ${YELP_API_KEY}`)
-    .then((response) => {
-      response.body.businesses
-        .map((e) => {
-          let yelpda = new Yelp(e);
-          yelparr.push(yelpda);
-        })
+    .then((data) => {
+      // console.log(response)
+      // console.log(response.body.businesses)
+      data.body.businesses.map((e) => {
+        let yelpda = new Yelp(e);
+        console.log(yelpda);
+        yelparr.push(yelpda);
+        // console.log(yelparr);
+      });
+      response.send(yelparr);
     });
-    response.send(yelparr);
+  // console.log(yelparr);
+
 }
 
 // 404 error
@@ -175,8 +197,6 @@ function Location(cityName, loca) {
   this.formatted_query = loca[0].display_name;
   this.latitude = loca[0].lat;
   this.longitude = loca[0].lon;
-  this.region = loca[0].address.country_code.toUpperCase();
-
 }
 
 function Trails(data) {
@@ -207,6 +227,12 @@ function Yelp(data) {
   this.price = data.price;
   this.rating = data.rating;
   this.url = data.url;
+}
+function Region(loca) {
+  this.region = loca[0].address.country_code.toUpperCase();
+  this.latitude = loca[0].lat;
+  this.longitude = loca[0].lon;
+  sdRegion.push(this);
 }
 
 client.connect(() => {
