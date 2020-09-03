@@ -69,27 +69,15 @@ function weatherFunc(req, res) {
   const cityData = req.query.search_query;
   const latit = req.query.latitude;
   const long = req.query.longitude;
-  // console.log(cityData)
-  // console.log('latitude',latit)
-  // const weatherInfo = require('./data/weather.json');
-  // console.log(weatherInfo);
   let weatherKey = process.env.WEATHER_KEY;
   const url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityData}&lat=${latit}&lon=${long}&key=${weatherKey}`;
   console.log("weatherkey", url);
   superagent.get(url).then((data) => {
-    //  console.log(data.body);
-    // let weatherArr = [];
-    // console.log('this is data',data)
     data.body.data.map((item, idx) => {
-      // let weatherArr = [];
-      // if (idx <= 7) {
+     
       const weatherat = new Weather(item);
       weatherArr.push(weatherat);
-      // }
-      // console.log(weatherat);
-      // return weatherat
     });
-    // console.log(weatherArr);
     res.send(weatherArr);
   });
 }
@@ -144,6 +132,8 @@ function getRegion(cityName) {
 }
 app.get("/yelp", getYelp);
 async function getYelp(request, response) {
+  let page = request.query.page;
+  let offset = (page - 1) * 5;
   const cityName = request.query.search_query;
   let regions = await getRegion(cityName);
   let lat = regions.latitude;
@@ -155,6 +145,8 @@ async function getYelp(request, response) {
     term: "restaurants",
     latitude: lat,
     longitude: lon,
+    limit: 5,
+    offset: offset
   };
   superagent
     .get(url)
@@ -165,7 +157,7 @@ async function getYelp(request, response) {
       // console.log(response.body.businesses)
       data.body.businesses.map((e) => {
         let yelpda = new Yelp(e);
-        console.log(yelpda);
+        // console.log(yelpda);
         yelparr.push(yelpda);
         // console.log(yelparr);
       });
