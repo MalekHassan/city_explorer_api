@@ -15,12 +15,11 @@ app.use(cors());
 let sdRegion = [];
 
 app.get("/location", locationSet);
-
 async function locationSet(request, response) {
+  console.log('dataserver');
   const cityName = request.query.city;
   let dataserver = await getServerData(cityName);
-  console.log(dataserver);
-  // console.log('');
+  console.log('we are in the location route');
   if (dataserver.length === 0) {
     console.log("from API");
     response.send(await getApiData(cityName));
@@ -67,14 +66,12 @@ app.get("/weather", weatherFunc);
 function weatherFunc(req, res) {
   let weatherArr = [];
   const cityData = req.query.search_query;
-  const latit = req.query.latitude;
-  const long = req.query.longitude;
   let weatherKey = process.env.WEATHER_KEY;
-  const url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityData}&lat=${latit}&lon=${long}&key=${weatherKey}`;
-  console.log("weatherkey", url);
-  superagent.get(url).then((data) => {
-    data.body.data.map((item, idx) => {
-     
+  const url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityData}&key=${weatherKey}`;
+  // console.log("weatherkey", url);
+  superagent.get(url).then((datas) => {
+    console.log("data.body", datas);
+    datas.body.data.map((item, idx) => {
       const weatherat = new Weather(item);
       weatherArr.push(weatherat);
     });
@@ -85,15 +82,14 @@ function weatherFunc(req, res) {
 app.get("/trails", trialsFunc);
 function trialsFunc(req, res) {
   let trailsArr = [];
-  const cityName = req.query.search_query;
+  // const cityName = req.query.search_query;
   const lat = req.query.latitude;
   const lon = req.query.longitude;
-
   let trailKey = process.env.TRIALE_API_KEY;
   const url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&key=${trailKey}`;
-  console.log('url',url);
+  // console.log('url',url);
   superagent.get(url).then((datas) => {
-    // console.log(datas.body.trails);
+    console.log(datas.body.trails);
     datas.body.trails.map((item) => {
       const trailsItem = new Trails(item);
       trailsArr.push(trailsItem);
